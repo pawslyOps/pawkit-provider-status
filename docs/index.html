@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="favicon.ico">
+<title>Pawkit Provider Status</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; status rail across the top, then numbered steps (a real sequence), then fallbacks, data, messages, phases. */
+:root{
+  --bg:#f6fbfa; --surface:#ffffff; --ink:#263d39; --muted:#5d746f; --line:#d5e7e3;
+  --teal:#007f78; --teal2:#00a79d; --mint:#e8f8f5;
+  --warn:#b26a00; --warnbg:#fff4e0; --bad:#b3261e; --badbg:#fdecea; --good:#1d7a3a; --goodbg:#e6f4ea;
+  --f-body:"Lato",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1a18; --surface:#162523; --ink:#e3efec; --muted:#9db3ae; --line:#2a3d3a;
+  --teal:#3cc7bc; --teal2:#5ad8cd; --mint:#173a36;
+  --warn:#f2b45a; --warnbg:#3a2a10; --bad:#f28b82; --badbg:#3b1a18; --good:#7fd19b; --goodbg:#16301f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1a18; --surface:#162523; --ink:#e3efec; --muted:#9db3ae; --line:#2a3d3a;
+  --teal:#3cc7bc; --teal2:#5ad8cd; --mint:#173a36;
+  --warn:#f2b45a; --warnbg:#3a2a10; --bad:#f28b82; --badbg:#3b1a18; --good:#7fd19b; --goodbg:#16301f; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 60px}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.2}
+h1{font-size:2rem;font-weight:900;letter-spacing:-.01em}
+h2{font-size:1.35rem;font-weight:900;color:var(--teal)}
+h3{font-size:1rem;font-weight:700}
+p{margin:0}
+.lede{color:var(--muted);max-width:68ch;margin-top:8px}
+.eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;font-weight:700;color:var(--teal2)}
+section{display:flex;flex-direction:column;gap:16px}
+.sub{color:var(--muted);max-width:70ch}
+code,.mono{font-family:var(--f-mono);font-size:.82em}
+/* status rail */
+.rail{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-weight:700;font-size:.85rem;background:var(--mint);color:var(--teal);border:1px solid var(--line);white-space:nowrap}
+.pill.warn{background:var(--warnbg);color:var(--warn)}
+.pill.bad{background:var(--badbg);color:var(--bad)}
+.pill.good{background:var(--goodbg);color:var(--good)}
+.arrow{color:var(--muted);font-weight:700}
+.rail-ends{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+/* steps */
+.steps{display:flex;flex-direction:column;gap:12px}
+.step{display:grid;grid-template-columns:44px 1fr;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.num{width:36px;height:36px;border-radius:50%;background:var(--teal);color:var(--surface);display:grid;place-items:center;font-weight:900}
+.step-body{min-width:0;display:flex;flex-direction:column;gap:10px}
+.step-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.kv div{min-width:0}
+.k{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700}
+.msg{background:var(--mint);border-radius:10px 10px 10px 2px;padding:10px 12px;font-size:.9rem;max-width:62ch}
+.msg .btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.msg .btns span{border:1px solid var(--teal2);color:var(--teal);border-radius:6px;padding:2px 8px;font-size:.8rem;font-weight:700;background:var(--surface)}
+.who{font-size:.78rem;font-weight:700;color:var(--muted)}
+/* tables */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:.88rem}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.t{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:4px;background:var(--mint);color:var(--teal)}
+.tag.new{background:var(--warnbg);color:var(--warn)}
+/* two-col */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.card.hl{border-color:var(--teal2);box-shadow:0 0 0 2px var(--mint)}
+.decide{display:flex;flex-direction:column;gap:8px}
+.decide li{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;list-style:none}
+.decide{padding:0;margin:0}
+.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;overflow-x:auto;margin:0}
+footer{color:var(--muted);font-size:.82rem}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Pawkit · Operations · Proposed workflow</div>
+  <h1>Provider Status</h1>
+  <p class="lede">From the moment the CS team books a visit in Zoho to the moment it is done, the provider taps buttons in WhatsApp and the customer is told what is happening. If the provider goes quiet, Zoho asks the CS team to call and update it by hand, and the customer still gets the update.</p>
+</header>
+
+<section>
+  <h2>One booking, one live status</h2>
+  <p class="sub">A new field on the Booking record, <b>Visit Status</b>, holds where the visit is right now. Every change to it sends the right WhatsApp message. The existing Booking Status (Scheduled, Completed, Cancelled, To be Rescheduled) stays and is set from it at the end.</p>
+  <div class="rail" aria-label="Visit status order">
+    <span class="pill">Awaiting provider</span><span class="arrow">→</span>
+    <span class="pill">Confirmed</span><span class="arrow">→</span>
+    <span class="pill">On the way</span><span class="arrow">→</span>
+    <span class="pill warn">Delayed</span><span class="arrow">→</span>
+    <span class="pill">Nearby</span><span class="arrow">→</span>
+    <span class="pill">Arrived</span><span class="arrow">→</span>
+    <span class="pill">In progress</span><span class="arrow">→</span>
+    <span class="pill good">Completed</span>
+  </div>
+  <div class="rail-ends">
+    <span class="who">Can end at any point:</span>
+    <span class="pill bad">Cancelled</span>
+    <span class="pill warn">Needs reschedule</span>
+    <span class="pill bad">Provider declined</span>
+  </div>
+</section>
+
+<section>
+  <h2>Step by step</h2>
+  <div class="steps">
+
+    <div class="step"><div class="num">1</div><div class="step-body">
+      <div class="step-head"><h3>CS team creates the booking in Zoho</h3><span class="pill">Awaiting provider</span></div>
+      <div class="kv">
+        <div><div class="k">Who</div>CS team</div>
+        <div><div class="k">Where</div>Zoho CRM › Booking (Date_Time, Partner_Name, Provider_Number, Pet_Owner, Mobile_Number, Service_Address)</div>
+        <div><div class="k">Trigger</div>Booking Status set to <b>Scheduled</b> with a provider assigned</div>
+      </div>
+    </div></div>
+
+    <div class="step"><div class="num">2</div><div class="step-body">
+      <div class="step-head"><h3>Provider gets a WhatsApp job alert</h3><span class="pill">Awaiting provider</span></div>
+      <div class="kv">
+        <div><div class="k">Who</div>Zoho workflow → WOZTELL template</div>
+        <div><div class="k">Sent to</div>Provider_Number (also Assistant / Additional provider if filled)</div>
+      </div>
+      <div class="msg"><div class="who">To provider</div>New Pawkit booking: Grooming for Mochi (Poodle, 6 kg) on Sat 22 Nov, 10:00. Address: Tampines St 81. Notes: nervous with dryers. Can you take this job?
+        <div class="btns"><span>Confirm</span><span>Can't make it</span></div></div>
+    </div></div>
+
+    <div class="step"><div class="num">3</div><div class="step-body">
+      <div class="step-head"><h3>Provider confirms in WhatsApp</h3><span class="pill">Confirmed</span></div>
+      <div class="kv">
+        <div><div class="k">How</div>Button reply lands in Woztell logs; a Zoho function finds the provider's booking and sets Visit Status + Confirmed_Date</div>
+        <div><div class="k">If "Can't make it"</div>Visit Status = Provider declined → Zoho task to CS team to reassign (customer is not told yet)</div>
+      </div>
+    </div></div>
+
+    <div class="step"><div class="num">4</div><div class="step-body">
+      <div class="step-head"><h3>Customer is told the provider confirmed</h3><span class="pill">Confirmed</span></div>
+      <div class="msg"><div class="who">To customer</div>Good news! Jasmine has confirmed Mochi's grooming on Sat 22 Nov at 10:00. We'll message you when she's on the way.</div>
+    </div></div>
+
+    <div class="step"><div class="num">5</div><div class="step-body">
+      <div class="step-head"><h3>On the day: provider sets off, customer sees status, location and ETA</h3><span class="pill">On the way</span></div>
+      <div class="kv">
+        <div><div class="k">Morning / 90 min before</div>Provider gets a reminder with buttons</div>
+        <div><div class="k">Customer gets</div>Status, provider name, ETA, and (phase 2) a live tracking link with traffic-based ETA</div>
+      </div>
+      <div class="msg"><div class="who">To provider, 90 min before</div>Reminder: Mochi, 10:00, Tampines St 81. Tap when you leave.
+        <div class="btns"><span>On my way</span><span>Running late</span><span>Can't make it</span></div></div>
+      <div class="msg"><div class="who">To customer</div>Jasmine is on the way to you. Estimated arrival 9:55. Track her here: pawkit.sg/t/8F2K</div>
+    </div></div>
+
+    <div class="step"><div class="num">6</div><div class="step-body">
+      <div class="step-head"><h3>Delays: provider reports, or CS team calls and enters it</h3><span class="pill warn">Delayed</span></div>
+      <div class="kv">
+        <div><div class="k">Provider path</div>Taps <b>Running late</b> → picks reason + new ETA (15 / 30 / 45 / 60+ min)</div>
+        <div><div class="k">No-update path</div>Zoho sees no "On my way" or a passed ETA → task + alert to CS team on shift → CS calls provider → enters Delay Reason + New ETA in Zoho</div>
+        <div><div class="k">Either way</div>Same customer message fires. Entered_By records Provider or CS name.</div>
+      </div>
+      <div class="msg"><div class="who">To customer</div>Sorry, Jasmine is running about 30 minutes late due to heavy traffic. New arrival time: about 10:30. Reply here if this time doesn't work for you.</div>
+      <p class="sub">Delay reasons: Traffic · Previous visit ran over · Vehicle or transport issue · Weather · Personal emergency · Other (note). Over 30 min late links to the Escalation SOP ($20 off next booking): Zoho flags it for the CS team; nothing is credited automatically.</p>
+    </div></div>
+
+    <div class="step"><div class="num">7</div><div class="step-body">
+      <div class="step-head"><h3>Nearby, then arrived</h3><span class="pill">Nearby</span><span class="pill">Arrived</span></div>
+      <div class="kv">
+        <div><div class="k">Phase 1</div>Provider taps <b>Nearby</b> (about 10 min away), then <b>Arrived</b></div>
+        <div><div class="k">Phase 2</div>"Nearby" fires on its own when the tracking link shows about 2 km or 10 min away</div>
+      </div>
+      <div class="msg"><div class="who">To customer</div>Jasmine is about 10 minutes away. Please get Mochi ready.</div>
+      <div class="msg"><div class="who">To customer</div>Jasmine has arrived at your address.</div>
+    </div></div>
+
+    <div class="step"><div class="num">8</div><div class="step-body">
+      <div class="step-head"><h3>Provider starts the service</h3><span class="pill">In progress</span></div>
+      <div class="msg"><div class="who">To provider, after Arrived</div>Tap when you start.
+        <div class="btns"><span>Service started</span></div></div>
+      <p class="sub">No customer message here (they can see the provider). The Ops360 page shows it as live.</p>
+    </div></div>
+
+    <div class="step"><div class="num">9</div><div class="step-body">
+      <div class="step-head"><h3>Provider closes the visit</h3><span class="pill good">Completed</span><span class="pill bad">Cancelled</span><span class="pill warn">Needs reschedule</span></div>
+      <div class="msg"><div class="who">To provider</div>How did the visit end?
+        <div class="btns"><span>Completed</span><span>Cancelled</span><span>Needs reschedule</span></div></div>
+      <div class="kv">
+        <div><div class="k">Completed</div>Booking Status → Completed. Customer gets thank-you (+ invoice / review link already in use)</div>
+        <div><div class="k">Cancelled</div>Provider picks reason → Booking Status → Cancelled → CS task to call customer before any refund talk</div>
+        <div><div class="k">Needs reschedule</div>Reason → Booking Status → To be Rescheduled → CS task to offer new slots</div>
+      </div>
+      <p class="sub">Cancel / reschedule reasons: Pet too stressed · Pet unwell (vet advised) · Customer not home · Customer cancelled on site · Access or parking issue · Provider unwell · Other (note).</p>
+    </div></div>
+
+  </div>
+</section>
+
+<section>
+  <h2>If the provider goes quiet</h2>
+  <p class="sub">Timers run from the appointment time (Date_Time). Each one checks Visit Status first and does nothing if the provider has already updated.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>When</th><th>If Visit Status is still</th><th>What happens</th></tr></thead>
+    <tbody>
+      <tr><td class="t">+2 h after alert</td><td>Awaiting provider</td><td>Second WhatsApp to provider</td></tr>
+      <tr><td class="t">+4 h after alert</td><td>Awaiting provider</td><td>Zoho task to CS team: call provider, confirm or reassign. Booking within 24 h: straight to task, no wait</td></tr>
+      <tr><td class="t">T − 90 min</td><td>Confirmed</td><td>Reminder to provider with On my way / Running late buttons</td></tr>
+      <tr><td class="t">T − 45 min</td><td>Confirmed</td><td>Alert to CS team on shift: call provider, enter status or delay by hand</td></tr>
+      <tr><td class="t">ETA + 10 min</td><td>On the way / Delayed</td><td>Alert to CS team: call provider, update ETA</td></tr>
+      <tr><td class="t">T + 30 min</td><td>not Arrived</td><td>Marked late over 30 min → Escalation SOP flag for the CS team</td></tr>
+      <tr><td class="t">End_Time + 60 min</td><td>In progress / Arrived</td><td>Ask provider to close; then CS task</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Status map</h2>
+<pre class="mermaid">
+stateDiagram-v2
+  direction LR
+  [*] --> Awaiting: Booking Scheduled
+  Awaiting --> Confirmed: Provider taps Confirm
+  Awaiting --> Declined: Can't make it
+  Declined --> Awaiting: CS reassigns
+  Confirmed --> OnTheWay: On my way
+  Confirmed --> Delayed: Running late / CS call
+  OnTheWay --> Delayed: Running late / CS call
+  Delayed --> OnTheWay: New ETA
+  OnTheWay --> Nearby: ~10 min away
+  Delayed --> Nearby
+  Nearby --> Arrived
+  Arrived --> InProgress: Service started
+  InProgress --> Completed
+  InProgress --> Cancelled
+  InProgress --> Reschedule
+  Confirmed --> Cancelled
+  Confirmed --> Reschedule
+  Completed --> [*]
+  Cancelled --> [*]
+  Reschedule --> [*]
+</pre>
+</section>
+
+<section>
+  <h2>What we add in Zoho</h2>
+  <p class="sub">Checked against the live Booking module on 19 Nov. Provider phone, provider lookups, Confirmed_Date, Booking_Status and Reason_Note already exist and are reused.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Field (Booking)</th><th>Type</th><th>Use</th></tr></thead>
+    <tbody>
+      <tr><td><b>Visit_Status</b> <span class="tag new">new</span></td><td>Picklist</td><td>The live status above. Drives every message.</td></tr>
+      <tr><td><b>Status_Updated_At</b> <span class="tag new">new</span></td><td>Date/time</td><td>Last change; timers compare against it</td></tr>
+      <tr><td><b>Status_Updated_By</b> <span class="tag new">new</span></td><td>Picklist / text</td><td>Provider (WhatsApp) or the CS team member who called</td></tr>
+      <tr><td><b>Provider_ETA</b> <span class="tag new">new</span></td><td>Date/time</td><td>Shown to customer; ETA + 10 min check</td></tr>
+      <tr><td><b>Delay_Reason</b> <span class="tag new">new</span></td><td>Picklist</td><td>Traffic, previous visit ran over, etc.</td></tr>
+      <tr><td><b>Delay_Minutes</b> <span class="tag new">new</span></td><td>Number</td><td>15 / 30 / 45 / 60+; over 30 = SOP flag</td></tr>
+      <tr><td><b>Visit_End_Reason</b> <span class="tag new">new</span></td><td>Picklist</td><td>Cancel / reschedule reason from the provider</td></tr>
+      <tr><td><b>Tracking_Link</b> <span class="tag new">new</span></td><td>URL</td><td>Phase 2 only</td></tr>
+      <tr><td>Confirmed_Date, Booking_Status, Reason_Note, Provider_Number</td><td><span class="tag">exists</span></td><td>Set by the flow; no change to how they work today</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sub">Plus a <b>Visit_Status_Log</b> subform or related list (time, from, to, by, note) so complaints can show exactly what the customer was told and when.</p>
+</section>
+
+<section>
+  <h2>WhatsApp messages to get approved</h2>
+  <p class="sub">Messages that start a conversation need a Meta-approved template in WOZTELL (Utility category). Button replies from providers come back through the same Woztell logs that the urgent-alert rule already reads.</p>
+  <div class="cols">
+    <div class="card"><h3>To providers (5)</h3><ul>
+      <li>Job alert: Confirm / Can't make it</li>
+      <li>Day-of reminder: On my way / Running late / Can't make it</li>
+      <li>Delay follow-up: 15 / 30 / 45 / 60+ min (then reason)</li>
+      <li>On-site: Nearby / Arrived / Service started</li>
+      <li>Close: Completed / Cancelled / Needs reschedule</li>
+    </ul></div>
+    <div class="card"><h3>To customers (7)</h3><ul>
+      <li>Provider confirmed</li>
+      <li>Provider on the way (+ ETA, + link in phase 2)</li>
+      <li>Delay with reason and new time</li>
+      <li>Provider nearby</li>
+      <li>Provider arrived</li>
+      <li>Visit completed</li>
+      <li>Visit cancelled / needs reschedule (CS team will call)</li>
+    </ul></div>
+  </div>
+</section>
+
+<section>
+  <h2>Build in phases</h2>
+  <div class="cols">
+    <div class="card hl"><div class="eyebrow">Phase 1 · about 1 week</div><h3>WhatsApp buttons + CS fallback</h3><ul>
+      <li>New fields and status log in Zoho</li>
+      <li>12 templates submitted to Meta</li>
+      <li>Zoho workflow per status change → WOZTELL send</li>
+      <li>Function that reads provider button replies</li>
+      <li>Timers and CS team alerts</li>
+      <li>"Live visits" board on Ops360</li>
+    </ul></div>
+    <div class="card"><div class="eyebrow">Phase 2</div><h3>Live location + traffic ETA</h3><ul>
+      <li>"On my way" opens a provider page that shares phone GPS while travelling</li>
+      <li>Customer tracking link with map and ETA</li>
+      <li>Google Maps traffic ETA, refreshed every few minutes</li>
+      <li>Nearby fires on its own at ~2 km / 10 min</li>
+      <li>Delay offered to provider when ETA slips 15+ min</li>
+    </ul></div>
+    <div class="card"><div class="eyebrow">Phase 3 · optional</div><h3>Pawkit app</h3><ul>
+      <li>Same statuses as push notifications in the iPhone app</li>
+      <li>Booking screen shows status + map</li>
+      <li>Needs the app developer; Zoho stays the source</li>
+    </ul></div>
+  </div>
+  <p class="sub">Why not WhatsApp live location: when a provider shares live location in WhatsApp, the business API only receives a pin, not the moving position. Live tracking and traffic ETA need the phase 2 link.</p>
+</section>
+
+<section>
+  <h2>Decisions needed</h2>
+  <ul class="decide">
+    <li><b>Automatic customer messages.</b> These are fixed templates sent on a status change, like today's booking emails, with no AI writing them. Charlene to confirm they can go out without a person approving each one.</li>
+    <li><b>Customer channel.</b> WhatsApp first (works today), app push later? Or is the app required from day one?</li>
+    <li><b>Provider buy-in.</b> Providers must tap the buttons on every visit. Make it part of the provider agreement and count missed updates?</li>
+    <li><b>Timer values.</b> Confirm 4 h to accept, reminder at 90 min, CS call at 45 min, ETA + 10 min.</li>
+    <li><b>Two visits close together.</b> If a provider has two bookings in a row, replies match the next unfinished visit. OK, or should each message carry the booking reference?</li>
+    <li><b>Who builds.</b> Kent William for Zoho Flow / WOZTELL, or Vince's team builds directly in Zoho as with the urgent alert.</li>
+  </ul>
+</section>
+
+<footer>Proposed 19 Nov 2026 · Field names checked against Zoho CRM Booking module · Message wording is a draft for template approval</footer>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>
+mermaid.initialize({startOnLoad:true,theme:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"default")});
+</script>
+</body>
+</html>
