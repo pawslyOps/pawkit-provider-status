@@ -212,7 +212,16 @@ footer{color:var(--muted);font-size:.82rem}
       <div class="step-head"><h3>Provider starts the service</h3><span class="pill">In progress</span></div>
       <div class="msg"><div class="who">To provider, after Arrived</div>Tap when you start.
         <div class="btns"><span>Service started</span></div></div>
-      <p class="sub">No customer message here (they can see the provider). The Ops360 page shows it as live.</p>
+      <div class="kv">
+        <div><div class="k">Provider doesn't tap</div>15 min after Arrived (or after the booking time if Arrived never came through), Zoho asks the <b>customer</b>, not the provider, who is busy grooming.</div>
+        <div><div class="k">Customer: Yes, started</div>Visit Status = In progress, Status_Updated_By = Customer. Nothing is sent to the provider.</div>
+        <div><div class="k">Customer: Arrived, not started</div>Visit Status = Arrived. Asked again in 15 min.</div>
+        <div><div class="k">Customer: Not here yet</div>Visit Status = Checking with provider → CS team alerted to call the provider; customer gets the holding message.</div>
+        <div><div class="k">Customer doesn't reply</div>If GPS shows the provider at the address, Zoho treats it as In progress. If not, the CS team is alerted.</div>
+      </div>
+      <div class="msg"><div class="who">To customer (only if the provider hasn't tapped)</div>Hi! Just checking: has Jasmine arrived and started Mochi's grooming?
+        <div class="btns"><span>Yes, started</span><span>Arrived, not started</span><span>Not here yet</span></div></div>
+      <p class="sub">The Ops360 page shows the visit as live either way.</p>
     </div></div>
 
     <div class="step"><div class="num">9</div><div class="step-body">
@@ -245,6 +254,7 @@ footer{color:var(--muted);font-size:.82rem}
       <tr><td class="t">No GPS for 10 min</td><td>On the way / Delayed / Nearby</td><td>Alert to CS team: provider's location stopped (page closed or phone locked). Call provider</td></tr>
       <tr><td class="t">ETA + 10 min</td><td>On the way / Delayed</td><td>Alert to CS team: call provider, update ETA</td></tr>
       <tr><td class="t">T + 30 min</td><td>not Arrived</td><td>Marked late over 30 min → Escalation SOP flag for the CS team</td></tr>
+      <tr><td class="t">Arrived + 15 min (or T + 15 min)</td><td>Arrived / not In progress</td><td>Ask the customer: started / arrived, not started / not here yet. No message to the provider</td></tr>
       <tr><td class="t">End_Time + 60 min</td><td>In progress / Arrived</td><td>Ask provider to close; then CS task</td></tr>
     </tbody>
   </table></div>
@@ -297,7 +307,8 @@ stateDiagram-v2
   OnTheWay --> Nearby: Google Maps within 2 km or 10 min
   Delayed --> Nearby: Google Maps within 2 km or 10 min
   Nearby --> Arrived: within 100 m or tap Arrived
-  Arrived --> InProgress: Service started
+  Arrived --> InProgress: Provider taps or customer confirms
+  Arrived --> Checking: Customer says not here yet
   InProgress --> Completed
   InProgress --> Cancelled
   InProgress --> Reschedule
@@ -317,7 +328,7 @@ stateDiagram-v2
     <tbody>
       <tr><td><b>Visit_Status</b> <span class="tag new">new</span></td><td>Picklist</td><td>The live status above. Drives every message.</td></tr>
       <tr><td><b>Status_Updated_At</b> <span class="tag new">new</span></td><td>Date/time</td><td>Last change; timers compare against it</td></tr>
-      <tr><td><b>Status_Updated_By</b> <span class="tag new">new</span></td><td>Picklist / text</td><td>Provider (WhatsApp) or the CS team member who called</td></tr>
+      <tr><td><b>Status_Updated_By</b> <span class="tag new">new</span></td><td>Picklist / text</td><td>Provider (WhatsApp), Customer (WhatsApp), GPS, or the CS team member who called</td></tr>
       <tr><td><b>Provider_ETA</b> <span class="tag new">new</span></td><td>Date/time</td><td>Shown to customer; ETA + 10 min check</td></tr>
       <tr><td><b>Delay_Reason</b> <span class="tag new">new</span></td><td>Picklist</td><td>Traffic, previous visit ran over, etc.</td></tr>
       <tr><td><b>Delay_Minutes</b> <span class="tag new">new</span></td><td>Number</td><td>15 / 30 / 45 / 60+; over 30 = SOP flag</td></tr>
@@ -347,7 +358,8 @@ stateDiagram-v2
       <li>On-site: Service started (Nearby and Arrived come from Google Maps)</li>
       <li>Close: Completed / Cancelled / Needs reschedule</li>
     </ul></div>
-    <div class="card"><h3>To customers (8)</h3><ul>
+    <div class="card"><h3>To customers (9)</h3><ul>
+      <li>Has your provider started? Yes, started / Arrived, not started / Not here yet (only if the provider hasn't tapped)</li>
       <li>Day-before reminder (unless the provider cancels)</li>
       <li>Checking with your provider (holding message)</li>
       <li>Provider on the way (+ ETA, + link in phase 2)</li>
@@ -375,7 +387,7 @@ stateDiagram-v2
   <div class="cols">
     <div class="card hl"><div class="eyebrow">Phase 1a · about 1 week</div><h3>WhatsApp buttons + CS fallback</h3><ul>
       <li>New fields and status log in Zoho</li>
-      <li>14 templates submitted to Meta</li>
+      <li>15 templates submitted to Meta</li>
       <li>Job offers with buttons, queue and quiet times</li>
       <li>Replace the current reminder emails if they overlap</li>
       <li>Zoho workflow per status change → WOZTELL send</li>
