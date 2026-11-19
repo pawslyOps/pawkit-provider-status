@@ -131,11 +131,11 @@ footer{color:var(--muted);font-size:.82rem}
   <div class="steps">
 
     <div class="step"><div class="num">1</div><div class="step-body">
-      <div class="step-head"><h3>CS team creates the booking in Zoho</h3><span class="pill">Awaiting provider</span></div>
+      <div class="step-head"><h3>CS team creates the booking, Zoho finds the provider</h3><span class="pill">Awaiting provider</span></div>
       <div class="kv">
-        <div><div class="k">Who</div>CS team</div>
-        <div><div class="k">Where</div>Zoho CRM › Booking (Date_Time, Partner_Name, Provider_Number, Pet_Owner, Mobile_Number, Service_Address)</div>
-        <div><div class="k">Trigger</div>Booking Status set to <b>Scheduled</b> with a provider assigned</div>
+        <div><div class="k">CS team</div>Creates the booking as <b>Pending Provider Time Slot</b> (service, pet, date, Service_Address), without picking a provider</div>
+        <div><div class="k">Zoho</div>Builds the offer list and sends job offers (see "How providers are chosen"). First <b>Can do</b> → Partner_Name + Provider_Number set, Booking Status → <b>Scheduled</b>, other groomers told it's taken</div>
+        <div><div class="k">CS team override</div>Can reorder the list or pick one person. If nobody accepts, Zoho raises a task to assign by phone</div>
       </div>
     </div></div>
 
@@ -258,6 +258,43 @@ footer{color:var(--muted);font-size:.82rem}
       <tr><td class="t">End_Time + 60 min</td><td>In progress / Arrived</td><td>Ask provider to close; then CS task</td></tr>
     </tbody>
   </table></div>
+</section>
+
+<section>
+  <h2>How providers are chosen</h2>
+  <p class="sub">Zoho builds the offer list from the provider records. The CS team decides who is offered the job, but no longer sends the asks and chasers by hand.</p>
+  <div class="cols">
+    <div class="card"><div class="eyebrow">Step 1 · Filter</div><h3>Who can do this job</h3><ul>
+      <li>Right type: groomer, vet or nurse (Provider_Type)</li>
+      <li>Active, not Inactive or Blocked (Account_Status)</li>
+      <li>Handles the pet's species (Types_of_species)</li>
+      <li>Can handle aggressive or medical-care pets, if the notes say so (Partner_Flags)</li>
+      <li>Not already on a Pawkit job at that time</li>
+    </ul></div>
+    <div class="card"><div class="eyebrow">Step 2 · Rank</div><h3>Who goes first</h3><ul>
+      <li>The groomer the customer asked for, or who did this pet last time</li>
+      <li>Nearest: from home address, or from their previous Pawkit job that day</li>
+      <li>Rating</li>
+      <li>Fair share: fewer recent jobs go ahead</li>
+    </ul></div>
+    <div class="card"><div class="eyebrow">Step 3 · Offer</div><h3>Who gets the message</h3><ul>
+      <li>Customer asked for someone: only them first; if Can't or no reply, the next on the list</li>
+      <li>Otherwise the top 3 at once; first <b>Can do</b> wins</li>
+      <li>CS team can reorder or pick one person</li>
+    </ul></div>
+  </div>
+  <div class="cols">
+    <div class="card"><div class="eyebrow">Outside jobs</div><h3>Providers' own jobs</h3><p>Zoho only sees Pawkit jobs. An offer that clashes with their own job: they tap Can't. A slow reply while busy: the offer moves on, nobody is chased. Late because an outside job ran over: caught by GPS like traffic. Their own jobs are never tracked. Later, if clashes are common: a <b>Busy until…</b> button and days-off blocking.</p></div>
+    <div class="card"><div class="eyebrow">Data check · 19 Nov</div><h3>Clean-up needed first</h3><ul>
+      <li>51 provider records; the 13 active groomers have real locations and species</li>
+      <li>Rating filled for only 2 groomers</li>
+      <li>Partner_Flags (aggressive / medical care) empty for everyone</li>
+      <li>Provider_Type has both "Vet" and "Veterinarian"</li>
+      <li>About 15 vets missing location or species; several sit on a placeholder point, not a real address</li>
+      <li>Last booking date shows 5 Aug 2026 for many (looks like an import date)</li>
+    </ul></div>
+  </div>
+  <p class="sub">So grooming offers can start ranking by requested groomer and distance now, and add rating once it's filled. Vet offers need the records cleaned first.</p>
 </section>
 
 <section>
@@ -420,6 +457,7 @@ stateDiagram-v2
     <li><b>Google Maps account.</b> Needs a Google Maps Platform key with billing on Pawkit's Google account (maps, distance with traffic, address lookup). Google gives a monthly free allowance; at Pawkit's volume (about 10 visits a day) the cost should be low, but Google's current prices need checking before sign-up.</li>
     <li><b>Location privacy.</b> Providers' location is shared only from "On my way" until the service starts, and is deleted after the visit. Providers agree to this in their agreement.</li>
     <li><b>Timer values.</b> Confirm: provider reminder after last job (7pm latest), customer reminder 18:00, CS check 08:00 visit day, on-the-way reminder at 90 min, CS call at 45 min, ETA + 10 min, job offer reply window 2 h (drivers: end of day).</li>
+    <li><b>Provider choice.</b> First to accept wins, or does the CS team approve the pick first (e.g. a premium groomer for a fussy dog)? App bookings: keep accepting in the app, or move to the same WhatsApp offer?</li>
     <li><b>Job offers.</b> CS team stops sending job asks by hand and uses the offer queue. Which groomers drive? Which jobs count as urgent enough to skip the queue?</li>
     <li><b>Existing reminder emails.</b> Zoho already tracks provider and customer reminders sent. Do these WhatsApp reminders replace them, or run alongside?</li>
     <li><b>Two visits close together.</b> If a provider has two bookings in a row, replies match the next unfinished visit. OK, or should each message carry the booking reference?</li>
