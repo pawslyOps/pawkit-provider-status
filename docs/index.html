@@ -88,8 +88,17 @@ footer{color:var(--muted);font-size:.82rem}
 <header>
   <div class="eyebrow">Pawkit · Operations · Proposed workflow</div>
   <h1>Provider Status</h1>
-  <p class="lede">From the moment the CS team books a visit in Zoho to the moment it is done, the provider taps buttons in WhatsApp and the customer is told what is happening. If the provider goes quiet, Zoho asks the CS team to call and update it by hand, and the customer still gets the update.</p>
+  <p class="lede">The day before a visit, the provider gets a WhatsApp reminder and the customer gets one too, unless the provider cancels. On the day, one tap on "On my way" shares the provider's location, and the customer is updated from Google Maps. If the provider goes quiet, Zoho asks the CS team to call, and the customer is kept informed either way.</p>
 </header>
+
+<section>
+  <h2>In short</h2>
+  <div class="cols">
+    <div class="card"><div class="eyebrow">Day before</div><h3>Reminders</h3><p>Provider: reminder with <b>Confirm</b> / <b>Can't make it</b>. Customer: reminder, sent unless the provider cancels.</p></div>
+    <div class="card"><div class="eyebrow">On the day</div><h3>Live updates</h3><p>Provider taps <b>On my way</b>. From there, Nearby and Arrived reach the customer from Google Maps with no more taps.</p></div>
+    <div class="card"><div class="eyebrow">Provider silent</div><h3>CS team steps in</h3><p>CS team is alerted 45 min before to call. If the provider can't be reached, the customer gets a "checking with your provider" message.</p></div>
+  </div>
+</section>
 
 <section>
   <h2>One booking, one live status</h2>
@@ -110,6 +119,10 @@ footer{color:var(--muted);font-size:.82rem}
     <span class="pill warn">Needs reschedule</span>
     <span class="pill bad">Provider declined</span>
   </div>
+  <div class="rail-ends">
+    <span class="who">Set by the CS team when the provider can't be reached:</span>
+    <span class="pill warn">Checking with provider</span>
+  </div>
 </section>
 
 <section>
@@ -126,26 +139,33 @@ footer{color:var(--muted);font-size:.82rem}
     </div></div>
 
     <div class="step"><div class="num">2</div><div class="step-body">
-      <div class="step-head"><h3>Provider gets a WhatsApp job alert</h3><span class="pill">Awaiting provider</span></div>
+      <div class="step-head"><h3>Day before: provider gets a WhatsApp reminder</h3><span class="pill">Awaiting provider</span></div>
       <div class="kv">
+        <div><div class="k">When</div>10:00 the day before the visit. A booking made after that time gets it straight away.</div>
         <div><div class="k">Who</div>Zoho workflow → WOZTELL template</div>
         <div><div class="k">Sent to</div>Provider_Number (also Assistant / Additional provider if filled)</div>
       </div>
-      <div class="msg"><div class="who">To provider</div>New Pawkit booking: Grooming for Mochi (Poodle, 6 kg) on Sat 22 Nov, 10:00. Address: Tampines St 81. Notes: nervous with dryers. Can you take this job?
+      <div class="msg"><div class="who">To provider</div>Reminder: Pawkit booking tomorrow, Sat 22 Nov, 10:00. Grooming for Mochi (Poodle, 6 kg) at Tampines St 81. Notes: nervous with dryers. Please confirm.
         <div class="btns"><span>Confirm</span><span>Can't make it</span></div></div>
+      <p class="sub">The provider has already agreed the time slot before the booking is Scheduled, so this is a reminder and a last check, not a job offer.</p>
     </div></div>
 
     <div class="step"><div class="num">3</div><div class="step-body">
-      <div class="step-head"><h3>Provider confirms in WhatsApp</h3><span class="pill">Confirmed</span></div>
+      <div class="step-head"><h3>Provider confirms, cancels or stays silent</h3><span class="pill">Confirmed</span></div>
       <div class="kv">
-        <div><div class="k">How</div>Button reply lands in Woztell logs; a Zoho function finds the provider's booking and sets Visit Status + Confirmed_Date</div>
-        <div><div class="k">If "Can't make it"</div>Visit Status = Provider declined → Zoho task to CS team to reassign (customer is not told yet)</div>
+        <div><div class="k">Confirm</div>Button reply lands in Woztell logs; a Zoho function finds the provider's booking and sets Visit Status + Confirmed_Date</div>
+        <div><div class="k">Can't make it</div>Visit Status = Provider declined → Zoho task to CS team to reassign right away. The customer reminder is held.</div>
+        <div><div class="k">No reply</div>Second WhatsApp at 18:00. Still nothing by 08:00 on the visit day → Zoho task to CS team to check with the provider.</div>
       </div>
     </div></div>
 
     <div class="step"><div class="num">4</div><div class="step-body">
-      <div class="step-head"><h3>Customer is told the provider confirmed</h3><span class="pill">Confirmed</span></div>
-      <div class="msg"><div class="who">To customer</div>Good news! Jasmine has confirmed Mochi's grooming on Sat 22 Nov at 10:00. We'll message you when she's on the way.</div>
+      <div class="step-head"><h3>Customer gets a reminder unless the provider cancels</h3><span class="pill">Awaiting provider</span><span class="pill">Confirmed</span></div>
+      <div class="kv">
+        <div><div class="k">When</div>18:00 the day before (or straight away for a late booking)</div>
+        <div><div class="k">Rule</div>Sent whether or not the provider has tapped Confirm. Not sent if the provider tapped Can't make it; the CS team calls the customer instead.</div>
+      </div>
+      <div class="msg"><div class="who">To customer</div>Reminder: Jasmine will be with you tomorrow, Sat 22 Nov, at 10:00 for Mochi's grooming. We'll message you when she's on the way.</div>
     </div></div>
 
     <div class="step"><div class="num">5</div><div class="step-body">
@@ -169,6 +189,10 @@ footer{color:var(--muted);font-size:.82rem}
         <div><div class="k">Either way</div>Same customer message fires. Entered_By records Provider or CS name.</div>
       </div>
       <div class="msg"><div class="who">To customer</div>Sorry, Jasmine is running about 30 minutes late due to heavy traffic. New arrival time: about 10:30. Reply here if this time doesn't work for you.</div>
+      <div class="kv">
+        <div><div class="k">Provider can't be reached</div>CS team sets Visit Status = <b>Checking with provider</b> → customer gets a holding message, and the CS team keeps trying (provider, then the duty coordinator)</div>
+      </div>
+      <div class="msg"><div class="who">To customer</div>We're checking on Jasmine's arrival time and will update you shortly. Sorry for the wait.</div>
       <p class="sub">Delay reasons: Traffic · Previous visit ran over · Vehicle or transport issue · Weather · Personal emergency · Other (note). Over 30 min late links to the Escalation SOP ($20 off next booking): Zoho flags it for the CS team; nothing is credited automatically.</p>
     </div></div>
 
@@ -211,10 +235,12 @@ footer{color:var(--muted);font-size:.82rem}
   <div class="tbl"><table>
     <thead><tr><th>When</th><th>If Visit Status is still</th><th>What happens</th></tr></thead>
     <tbody>
-      <tr><td class="t">+2 h after alert</td><td>Awaiting provider</td><td>Second WhatsApp to provider</td></tr>
-      <tr><td class="t">+4 h after alert</td><td>Awaiting provider</td><td>Zoho task to CS team: call provider, confirm or reassign. Booking within 24 h: straight to task, no wait</td></tr>
+      <tr><td class="t">Day before 10:00</td><td>(booking Scheduled)</td><td>Reminder to provider with Confirm / Can't make it</td></tr>
+      <tr><td class="t">Day before 18:00</td><td>Awaiting provider</td><td>Second WhatsApp to provider. Customer reminder goes out (unless Provider declined)</td></tr>
+      <tr><td class="t">Visit day 08:00</td><td>Awaiting provider</td><td>Zoho task to CS team: call provider, confirm or reassign</td></tr>
       <tr><td class="t">T − 90 min</td><td>Confirmed</td><td>Reminder to provider with On my way / Running late buttons</td></tr>
-      <tr><td class="t">T − 45 min</td><td>Confirmed</td><td>Alert to CS team on shift: call provider, enter status or delay by hand</td></tr>
+      <tr><td class="t">T − 45 min</td><td>Confirmed / Awaiting provider</td><td>Alert to CS team on shift: call provider, enter status or delay by hand</td></tr>
+      <tr><td class="t">Provider unreachable</td><td>any status before Arrived</td><td>CS team sets Checking with provider → customer holding message</td></tr>
       <tr><td class="t">No GPS for 10 min</td><td>On the way / Delayed / Nearby</td><td>Alert to CS team: provider's location stopped (page closed or phone locked). Call provider</td></tr>
       <tr><td class="t">ETA + 10 min</td><td>On the way / Delayed</td><td>Alert to CS team: call provider, update ETA</td></tr>
       <tr><td class="t">T + 30 min</td><td>not Arrived</td><td>Marked late over 30 min → Escalation SOP flag for the CS team</td></tr>
@@ -228,8 +254,14 @@ footer{color:var(--muted);font-size:.82rem}
 <pre class="mermaid">
 stateDiagram-v2
   direction LR
-  [*] --> Awaiting: Booking Scheduled
+  [*] --> Awaiting: Day-before reminder
   Awaiting --> Confirmed: Provider taps Confirm
+  Awaiting --> OnTheWay: No reply but taps On my way
+  Awaiting --> Checking: CS can't reach provider
+  Confirmed --> Checking: CS can't reach provider
+  Checking --> OnTheWay: Provider found
+  Checking --> Delayed: Provider found, late
+  Checking --> Cancelled
   Awaiting --> Declined: Can't make it
   Declined --> Awaiting: CS reassigns
   Confirmed --> OnTheWay: On my way
@@ -280,14 +312,15 @@ stateDiagram-v2
   <p class="sub">Messages that start a conversation need a Meta-approved template in WOZTELL (Utility category). Button replies from providers come back through the same Woztell logs that the urgent-alert rule already reads.</p>
   <div class="cols">
     <div class="card"><h3>To providers (5)</h3><ul>
-      <li>Job alert: Confirm / Can't make it</li>
+      <li>Day-before reminder: Confirm / Can't make it (and a second nudge)</li>
       <li>Day-of reminder: On my way / Running late / Can't make it</li>
       <li>Delay follow-up: 15 / 30 / 45 / 60+ min (then reason)</li>
       <li>On-site: Service started (Nearby and Arrived come from Google Maps)</li>
       <li>Close: Completed / Cancelled / Needs reschedule</li>
     </ul></div>
-    <div class="card"><h3>To customers (7)</h3><ul>
-      <li>Provider confirmed</li>
+    <div class="card"><h3>To customers (8)</h3><ul>
+      <li>Day-before reminder (unless the provider cancels)</li>
+      <li>Checking with your provider (holding message)</li>
       <li>Provider on the way (+ ETA, + link in phase 2)</li>
       <li>Delay with reason and new time</li>
       <li>Provider nearby</li>
@@ -313,7 +346,8 @@ stateDiagram-v2
   <div class="cols">
     <div class="card hl"><div class="eyebrow">Phase 1a · about 1 week</div><h3>WhatsApp buttons + CS fallback</h3><ul>
       <li>New fields and status log in Zoho</li>
-      <li>12 templates submitted to Meta</li>
+      <li>13 templates submitted to Meta</li>
+      <li>Replace the current reminder emails if they overlap</li>
       <li>Zoho workflow per status change → WOZTELL send</li>
       <li>Function that reads provider button replies</li>
       <li>Timers and CS team alerts</li>
@@ -343,13 +377,14 @@ stateDiagram-v2
     <li><b>Provider buy-in.</b> Providers must tap the buttons on every visit. Make it part of the provider agreement and count missed updates?</li>
     <li><b>Google Maps account.</b> Needs a Google Maps Platform key with billing on Pawkit's Google account (maps, distance with traffic, address lookup). Google gives a monthly free allowance; at Pawkit's volume (about 10 visits a day) the cost should be low, but Google's current prices need checking before sign-up.</li>
     <li><b>Location privacy.</b> Providers' location is shared only from "On my way" until the service starts, and is deleted after the visit. Providers agree to this in their agreement.</li>
-    <li><b>Timer values.</b> Confirm 4 h to accept, reminder at 90 min, CS call at 45 min, ETA + 10 min.</li>
+    <li><b>Timer values.</b> Confirm: provider reminder 10:00 day before, nudge + customer reminder 18:00, CS check 08:00 visit day, on-the-way reminder at 90 min, CS call at 45 min, ETA + 10 min.</li>
+    <li><b>Existing reminder emails.</b> Zoho already tracks provider and customer reminders sent. Do these WhatsApp reminders replace them, or run alongside?</li>
     <li><b>Two visits close together.</b> If a provider has two bookings in a row, replies match the next unfinished visit. OK, or should each message carry the booking reference?</li>
     <li><b>Who builds.</b> Kent William for Zoho Flow / WOZTELL, or Vince's team builds directly in Zoho as with the urgent alert.</li>
   </ul>
 </section>
 
-<footer>Proposed 19 Nov 2026 · Field names checked against Zoho CRM Booking module · Message wording is a draft for template approval</footer>
+<footer>Proposed 19 Nov 2026 · Updated after Charlene's review (day-before reminders, Checking with provider) · Field names checked against Zoho CRM Booking module · Message wording is a draft for template approval</footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
 <script>
